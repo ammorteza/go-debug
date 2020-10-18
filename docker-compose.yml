@@ -1,0 +1,42 @@
+version: "3.4"
+
+services: 
+    server:
+        image: acim/go-reflex
+        restart: always
+        container_name: server
+        environment:
+            - RACE_DETECTOR=1
+            - RUN_ARGS=server
+        volumes: 
+            - ./:/app            
+        working_dir: /app
+        command: >
+            sh -c "
+                reflex -r './*.go' -s -- sh -c 'go run main.go'         
+            "
+
+        ports: 
+            - 8090:9999
+
+    debugger:
+        image: acim/go-reflex
+        restart: always
+        container_name: debugger
+        security_opt: 
+            - seccomp:unconfined
+        environment:
+            - RACE_DETECTOR=1
+            - RUN_ARGS=server
+        volumes: 
+            - ./:/app            
+        working_dir: /app
+        command: >
+            sh -c "
+                go get github.com/go-delve/delve/cmd/dlv
+                reflex -r './*.go' -s -- sh -c 'dlv debug --headless --listen=:2345 --api-version=2'         
+            "
+
+        ports: 
+            - 2345:2345
+            - 9999:9999            
